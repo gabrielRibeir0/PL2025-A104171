@@ -15,13 +15,12 @@ def somador(line):
                 reading_value = 0
             if line[i] == '=':
                 print(str(acc))
-            elif line[i].lower() == 'o':
-                if i is not len(line) - 1 and line[i + 1].lower() == 'n':
-                    on = True
-                    i += 1
-                elif i is not len(line) - 2 and line[i + 1].lower() == 'f' and line[i + 2].lower() == 'f':
-                    on = False
-                    i += 2
+            elif line[i:(i + 2)].lower() == 'on':
+                on = True
+                i += 1
+            elif line[i:(i + 3)].lower() == 'off':
+                on = False
+                i += 2
         i += 1
 
     if reading_value > 0:
