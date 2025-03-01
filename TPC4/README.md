@@ -27,7 +27,7 @@ select ?nome ?desc where {
 
 O primeiro passo é identificar os tokens presentes na linguagem (a partir do exemplo dado):
 
-```
+```sql
 tokens = (
     'SELECT',
     'WHERE',
