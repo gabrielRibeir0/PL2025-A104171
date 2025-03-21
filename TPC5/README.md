@@ -46,6 +46,6 @@ O stock da máquina é persistido num ficheiro JSON e é carregado e guardado ao
 
 ## Resultados
 
-- Stock da mágina [stock.json](https://github.com/gabrielRibeir0/PL2025-A104171/blob/main/TPC5/stock.json)
+- Stock da máquina [stock.json](https://github.com/gabrielRibeir0/PL2025-A104171/blob/main/TPC5/stock.json)
 - Analisador léxico [vending_lex.py](https://github.com/gabrielRibeir0/PL2025-A104171/blob/main/TPC5/vending_lex.py)
 - Analisador sintático [vending_yacc.py](https://github.com/gabrielRibeir0/PL2025-A104171/blob/main/TPC5/vending_yacc.py)
