@@ -1,105 +1,103 @@
-from analex import lexer, tokens
+from analex import lexer
 
-tokens_list = []
-next_token = None
+prox_simb = ('Erro', '', 0, 0)
 
-def advance():
-    global next_token
-    current_token_index += 1
-    if current_token_index < len(tokens_list):
-        current_token = tokens_list[current_token_index]
+def parserError(simb):
+    raise Exception("Erro sintático, token inesperado: " + str(simb))
+
+def rec_term(simb):
+    global prox_simb
+    if prox_simb.type == simb:
+        prox_simb = lexer.token()
     else:
-        current_token = None
+        parserError(prox_simb)
 
-def match(expected_token_type):
-    global current_token
-    if current_token and current_token.type == expected_token_type:
-        token_value = current_token.value
-        advance()
-        return token_value
+def rec_Expr():
+    l = rec_Termo()
+    r = rec_Expr2(l)
+    print("Reconhecido: Exp --> Termo Exp2")
+    return r
+
+def rec_Expr2(l):
+    global prox_simb
+    if prox_simb is None:
+        return l
+    elif prox_simb.type == 'ADD':
+        rec_term('ADD')
+        t = rec_Termo()
+        res = rec_Expr2(l + t)
+        print("Reconhecido: Expr' --> '+' Termo Expr'")
+        return res
+    elif prox_simb.type == 'SUB':
+        rec_term('SUB')
+        t = rec_Termo()
+        res = rec_Expr2(l - t)
+        print("Reconhecido: Expr' --> '-' Termo Expr'")
+        return res
+    elif prox_simb.type == 'PF':
+        print("Reconhecido: Expr' --> ε")
+        return l
     else:
-        expected = expected_token_type
-        found = current_token.type if current_token else 'FIM'
-        line = current_token.lineno if current_token else 'desconhecida'
-        raise Exception(f"Erro de sintaxe na linha {line}: Esperado '{expected}', encontrado '{found}'")
+        parserError(prox_simb)
+        return l
 
-def p_expr_1():
-    """Expr -> Termo Expr'"""
-    left_value = p_termo_1()
-    return p_expr_2(left_value)
+def rec_Termo():
+    l = rec_Fator()
+    r = rec_Termo2(l)
+    print("Reconhecido: Termo --> Fator Termo'")
+    return r
 
-def p_expr_2(left_value):
-    """Expr' -> ADD Termo Expr' | SUB Termo Expr' | epsilon"""
-    global current_token
-    if current_token and current_token.type == 'ADD':
-        match('ADD')
-        right_value = p_termo_1()
-        result = left_value + right_value
-        return p_expr_2(result)
-    elif current_token and current_token.type == 'SUB':
-        match('SUB')
-        right_value = p_termo_1()
-        result = left_value - right_value
-        return p_expr_2(result)
+def rec_Termo2(l):
+    global prox_simb
+    if prox_simb is None:
+        return l
+    elif prox_simb.type == 'MUL':
+        rec_term('MUL')
+        f = rec_Fator()
+        r = rec_Termo2(l * f)
+        print("Reconhecido: Termo' --> '*' Fator Termo'")
+        return r
+    elif prox_simb.type == 'DIV':
+        rec_term('DIV')
+        f = rec_Fator()
+        if f == 0:
+            print("Erro: Divisão por zero")
+            return float('inf')
+        r = rec_Termo2(l / f)
+        print("Reconhecido: Termo' --> '/' Fator Termo'")
+        return r
+    elif prox_simb.type in ('ADD', 'SUB', 'PF'):
+        print("Reconhecido: Termo' --> ε")
+        return l
     else:
-        return left_value
+        parserError(prox_simb)
+        return l
 
-def p_termo_1():
-    """Termo -> Fator Termo'"""
-    left_value = p_fator()
-    return p_termo_2(left_value)
-
-def p_termo_2(left_value):
-    """Termo' -> MUL Fator Termo' | DIV Fator Termo' | epsilon"""
-    global current_token
-    if current_token and current_token.type == 'MUL':
-        match('MUL')
-        right_value = p_fator()
-        result = left_value * right_value
-        return p_termo_2(result)
-    elif current_token and current_token.type == 'DIV':
-        match('DIV')
-        right_value = p_fator()
-        if right_value == 0:
-            raise Exception("Erro: Divisão por zero!")
-        result = left_value / right_value
-        return p_termo_2(result)
+def rec_Fator():
+    global prox_simb
+    if prox_simb is None:
+        return 0
+    elif prox_simb.type == 'PA':
+        rec_term('PA')
+        e = rec_Expr()
+        rec_term('PF')
+        print("Reconhecido: Fator --> '(' Expr ')'")
+        return e
+    elif prox_simb.type == 'NUM':
+        n = int(prox_simb.value)
+        rec_term('NUM')
+        print("Reconhecido: Fator --> NUM")
+        return n
     else:
-        return left_value
-
-def p_fator():
-    """Fator -> NUM | PA Expr PF"""
-    global current_token
-    if current_token and current_token.type == 'NUM':
-        value = match('NUM')
-        return value
-    elif current_token and current_token.type == 'PA':
-        match('PA')
-        expr_value = p_expr_1()
-        match('PF')
-        return expr_value
-    else:
-        found = current_token.type if current_token else 'FIM'
-        line = current_token.lineno if current_token else 'desconhecida'
-        raise Exception(f"Erro de sintaxe na linha {line}: Esperado 'NUM' ou 'PA', encontrado '{found}'")
-
-def parse(input_string):
-    global current_token_index, current_token, tokens_list
-    lexer.input(input_string)
-    tokens_list[:] = list(lexer)
-    print(f"Tokens: {tokens_list}")
-
-    if not tokens_list:
+        parserError(prox_simb)
         return 0
 
-    advance()
 
-    final_result = p_expr_1()
-
-    if current_token is not None:
-        raise Exception(f"Erro de sintaxe: Token inesperado '{current_token.value}' ({current_token.type}) no final da expressão.")
-
-    return final_result
+def rec_Parser(data):
+    global prox_simb
+    lexer.input(data)
+    prox_simb = lexer.token()
+    return rec_Expr()
 
 
 if __name__ == "__main__":
@@ -121,7 +119,7 @@ if __name__ == "__main__":
     for expr in expressions:
         print(f"Expressão: \"{expr}\"")
         try:
-            result = parse(expr)
+            result = rec_Parser(expr)
             print(f"Resultado: {result}")
         except Exception as e:
             print(f"{e}")

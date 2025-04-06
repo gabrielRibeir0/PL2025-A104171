@@ -28,7 +28,7 @@ Expr   -> Termo Expr'
 Expr'  -> ADD Termo Expr' 
         | SUB Termo Expr' 
         | epsilon
-Termo   -> Factor Term'
+Termo   -> Fator Term'
 Termo'  -> MUL Fator Term' 
          | DIV Fator Term' 
          | epsilon
